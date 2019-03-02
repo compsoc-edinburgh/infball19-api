@@ -1,12 +1,25 @@
 package stats
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 func (i *Impl) Get(c *gin.Context) {
 	sku, err := i.Stripe.Skus.Get(i.Config.Stripe.SKU, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "Unknown error.",
+		})
+	}
+
+	c.JSON(http.StatusOK, struct{ Quantity int64 }{sku.Inventory.Quantity})
+}
+
+func (i *Impl) GetNonAlcoholic(c *gin.Context) {
+	sku, err := i.Stripe.Skus.Get(i.Config.Stripe.NonAlcoholicSKU, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",

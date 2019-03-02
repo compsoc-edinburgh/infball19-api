@@ -5,7 +5,7 @@ import (
 	"net/mail"
 	"fmt"
 
-	"github.com/compsoc-edinburgh/escape19-api/pkg/api/base"
+	"github.com/compsoc-edinburgh/infball19-api/pkg/api/base"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	stripe "github.com/stripe/stripe-go"

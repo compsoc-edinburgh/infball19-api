@@ -3,7 +3,7 @@ package ticket
 import (
 	"net/http"
 
-	"github.com/compsoc-edinburgh/escape19-api/pkg/api/base"
+	"github.com/compsoc-edinburgh/infball19-api/pkg/api/base"
 	"github.com/gin-gonic/gin"
 )
 

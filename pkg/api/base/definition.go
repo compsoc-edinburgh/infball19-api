@@ -7,7 +7,7 @@ import (
 	"regexp"
 
 	"github.com/badoux/checkmail"
-	"github.com/compsoc-edinburgh/escape19-api/pkg/config"
+	"github.com/compsoc-edinburgh/infball19-api/pkg/config"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	stripe "github.com/stripe/stripe-go"

@@ -17,14 +17,30 @@ type Config struct {
 
 	// Staff Code
 	StaffCode string `required:"true"`
+
+	// Public website url
+	PublicURL string `required:"true"`
+
+	// Redis connection parameters
+	Redis RedisConfig
+
+	// Endpoint for qr codes
+	QRLocation string `required:"true"`
 }
 
 // StripeConfig contains all configuration data for a CoSign connection
 type StripeConfig struct {
-	PublishableKey string `required:"true"`
-	SecretKey      string `required:"true"`
-	Product        string `required:"true"` // stripe product
-	SKU            string `required:"true"` // stripe SKU
+	PublishableKey  string `required:"true"`
+	SecretKey       string `required:"true"`
+	Product         string `required:"true"` // stripe product
+	SKU             string `required:"true"` // stripe SKU
+	NonAlcoholicSKU string // SKU for non alcoholic ticket
+}
+
+type RedisConfig struct {
+	Address  string `default: "localhost:6739"`
+	Password string `default: ""`
+	DB       int    `default:"0"`
 }
 
 // Token is an "API" user

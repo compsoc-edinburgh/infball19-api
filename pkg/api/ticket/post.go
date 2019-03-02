@@ -6,10 +6,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-redis/redis"
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go"
 
-	"github.com/compsoc-edinburgh/escape19-api/pkg/api/base"
+	"github.com/compsoc-edinburgh/infball19-api/pkg/api/base"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,11 +19,12 @@ func (i *Impl) Post(c *gin.Context) {
 		OrderID   string
 		AuthToken string
 
-		FullName    string
-		UUN         string
-		Email       string
+		FullName string
+		UUN      string
+		Email    string
 		// Over18      bool
-		MealType    string
+		NoAlcohol bool
+		MealType  string
 
 		SpecialReqs string
 	}
@@ -93,9 +95,10 @@ func (i *Impl) Post(c *gin.Context) {
 				"owner_email": result.Email,
 				"owner_name":  result.FullName,
 				// "over18":      strconv.FormatBool(result.Over18),
-				"meal_type":     result.MealType,
+				"no_alcohol":       strconv.FormatBool(result.NoAlcohol),
+				"meal_type":        result.MealType,
 				"special_requests": result.SpecialReqs,
-				"auth_token": authToken,
+				"auth_token":       authToken,
 			},
 		},
 	})
@@ -106,6 +109,15 @@ func (i *Impl) Post(c *gin.Context) {
 	}
 
 	if newToken {
+		client := redis.NewClient(&redis.Options{
+			Addr:     i.Config.Redis.Address,
+			Password: i.Config.Redis.Password,
+			DB:       i.Config.Redis.DB,
+		})
+		err = client.Set(authToken, result.FullName, 0).Err()
+		if err != nil {
+			return
+		}
 		if !base.SendTicketEmail(c, i.Mailgun, result.FullName, toAddress, order.ID, authToken) {
 			return
 		}

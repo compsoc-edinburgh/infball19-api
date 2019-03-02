@@ -3,12 +3,12 @@ package api
 import (
 	"gopkg.in/mailgun/mailgun-go.v1"
 
-	"github.com/compsoc-edinburgh/escape19-api/pkg/api/base"
-	"github.com/compsoc-edinburgh/escape19-api/pkg/api/charge"
-	"github.com/compsoc-edinburgh/escape19-api/pkg/api/list"
-	"github.com/compsoc-edinburgh/escape19-api/pkg/api/stats"
-	"github.com/compsoc-edinburgh/escape19-api/pkg/api/ticket"
-	"github.com/compsoc-edinburgh/escape19-api/pkg/config"
+	"github.com/compsoc-edinburgh/infball19-api/pkg/api/base"
+	"github.com/compsoc-edinburgh/infball19-api/pkg/api/charge"
+	"github.com/compsoc-edinburgh/infball19-api/pkg/api/list"
+	"github.com/compsoc-edinburgh/infball19-api/pkg/api/stats"
+	"github.com/compsoc-edinburgh/infball19-api/pkg/api/ticket"
+	"github.com/compsoc-edinburgh/infball19-api/pkg/config"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -44,8 +44,12 @@ func NewAPI(
 	router.GET("/ticket", ticket.Get)
 	router.POST("/ticket", ticket.Post)
 
+	check := check.Impl{API: a}
+	router.GET("/check",check.Get)
+
 	stats := stats.Impl{API: a}
-	router.GET("/stats", stats.Get)
+	router.GET("/stats/set", stats.Get)
+	router.GET("/stats/nonalcoholic", stats.GetNonAlcoholic)
 
 	list := list.Impl{API: a}
 	router.GET("/list", list.Get)

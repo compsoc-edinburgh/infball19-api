@@ -23,16 +23,20 @@ func (i *Impl) getOrder(orderID string) (*stripe.Order, error) {
 	// Items can also be tax and shipping (which for us is £0),
 	// so we can't do a simple items[0] check (also checking for length).
 	hasSKU := false
+	hasNoAlcoholSKU := false
 
 	for _, item := range order.Items {
 		// todo: check if item.Parent always exists
 		if item.Parent.ID == i.Config.Stripe.SKU {
 			hasSKU = true
 			break
+		} else if item.Parent.ID == i.Config.Stripe.NonAlcoholicSKU {
+			hasNoAlcoholSKU = true
+			break
 		}
 	}
 
-	if !hasSKU {
+	if !(hasSKU || hasNoAlcoholSKU) {
 		return nil, errInvalidOrder
 	}
 

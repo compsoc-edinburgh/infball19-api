@@ -1,4 +1,4 @@
-package ticket
+package check
 
 import "github.com/compsoc-edinburgh/infball19-api/pkg/api/base"
 
