@@ -1,4 +1,4 @@
-module github.com/compsoc-edinburgh/escape19-api
+module github.com/compsoc-edinburgh/infball19-api
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
