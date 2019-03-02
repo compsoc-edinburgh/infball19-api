@@ -13,8 +13,8 @@ import (
 
 func (i *Impl) Post(c *gin.Context) {
 
+	currentTime := time.Now()
 	startTime, _ := time.Parse(time.RFC3339, "2019-04-06T16:30:00+00:00")
-	currentTime, _ := time.Now()
 
 	if startTime.Unix() > currentTime.Unix() {
 		base.BadRequest(c, "Guests can't be checked in until 16:30 on the 6th of April!")
@@ -55,11 +55,11 @@ func (i *Impl) Post(c *gin.Context) {
 	}
 
 	hour, min, sec := currentTime.Clock()
-	checkedIn.Set(result.AuthToken, strconv.FormatInt(hour, 10)+":"+strconv.FormatInt(min, 10)+":"+strconv.FormatInt(sec, 10), 0)
+	checkedIn.Set(result.AuthToken, strconv.Itoa(hour)+":"+strconv.Itoa(min)+":"+strconv.Itoa(sec), 0)
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"data":   true,
+		"data":   struct{ Name string }{val},
 	})
 
 }

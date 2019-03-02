@@ -1,26 +1,27 @@
 package charge
 
 import (
+	"fmt"
 	"net/http"
 	"net/mail"
-	"fmt"
 
 	"github.com/compsoc-edinburgh/infball19-api/pkg/api/base"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	stripe "github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go/token"
 )
 
 func (i *Impl) MakeCharge(c *gin.Context) {
 	var result struct {
-		Token string
+		CardInfo  map[string]string
 		StaffCode string // special code
 
 		FullName string
-		UUN         string
-		Email string
+		UUN      string
+		Email    string
 		// Over18      bool
-		MealType     string
+		MealType string
 
 		SpecialReqs string
 	}
@@ -35,8 +36,21 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 		return
 	}
 
-	if result.Token == "" {
-		base.BadRequest(c, "Stripe token missing.")
+	if result.CardInfo == nil {
+		base.BadRequest(c, "Card information is missing.")
+		return
+	}
+
+	token, err := token.New(&stripe.TokenParams{
+		Card: &stripe.CardParams{
+			Number:   stripe.String(result.CardInfo["number"]),
+			ExpMonth: stripe.String(result.CardInfo["expmonth"]),
+			ExpYear:  stripe.String(result.CardInfo["expyear"]),
+			CVC:      stripe.String(result.CardInfo["cvc"]),
+		},
+	})
+	if err != nil {
+		base.BadRequest(c, "Invalid card information.")
 		return
 	}
 
@@ -51,7 +65,7 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 	}
 
 	toAddress := result.FullName + "<" + result.Email + ">"
-	_, err := mail.ParseAddress(toAddress)
+	_, err = mail.ParseAddress(toAddress)
 	if err != nil {
 		base.BadRequest(c, "Invalid email format provided. Please email infball@comp-soc.com if this is a mistake.")
 		return
@@ -112,9 +126,9 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 				"owner_email":     result.Email,
 				"owner_name":      result.FullName,
 				// "over18":          strconv.FormatBool(result.Over18),
-				"meal_type":     result.MealType,
+				"meal_type":        result.MealType,
 				"special_requests": result.SpecialReqs,
-				"auth_token": authToken,
+				"auth_token":       authToken,
 			},
 		},
 		Email: stripe.String(result.Email),
@@ -135,7 +149,7 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 
 	// Charge the user's card:
 	params := &stripe.OrderPayParams{}
-	params.SetSource(result.Token)
+	params.SetSource(token)
 
 	// Actually pay the user
 	o, err := i.Stripe.Orders.Pay(order.ID, params)
@@ -157,7 +171,7 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 		Description: stripe.String("Informatics ball 2019 ticket"),
 	})
 
-	if !base.SendTicketEmail(c, i.Mailgun, result.FullName, toAddress, o.ID, authToken) {
+	if !base.SendTicketEmail(c, i.Mailgun, result.FullName, toAddress, o.ID, authToken, "infball", "../qr") {
 		return
 	}
 
