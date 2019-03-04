@@ -118,7 +118,7 @@ func (i *Impl) Post(c *gin.Context) {
 		if err != nil {
 			return
 		}
-		if !base.SendTicketEmail(c, i.Mailgun, result.FullName, toAddress, order.ID, authToken, "infball", "../qr") {
+		if !base.SendTicketEmail(c, i.Mailgun, result.FullName, toAddress, order.ID, authToken, "../qr") {
 			return
 		}
 	}

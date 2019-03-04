@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,11 +18,12 @@ import (
 func main() {
 	var err error
 
-	m := multiconfig.NewWithPath(os.Getenv("config"))
+	configFile := multiconfig.NewWithPath("./config.toml")
 	cfg := &config.Config{}
-	m.MustLoad(cfg)
+	configFile.Load(cfg)
 
 	logLevel, err := logrus.ParseLevel(cfg.LogLevel)
+	fmt.Println(cfg.LogLevel)
 	if err != nil {
 		panic(err)
 	}

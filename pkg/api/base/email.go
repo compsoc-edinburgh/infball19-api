@@ -14,22 +14,19 @@ type EmailStruct struct {
 	Name      string
 	AuthToken string
 	OrderID   string
-	QRCode    string
 }
 
 var Email *template.Template = template.Must(template.ParseFiles("email.html"))
 
-func SendTicketEmail(c *gin.Context, mailgun mailgun.Mailgun, name, to_address, orderID, authToken, publicURL, qrCodeLocation string) (_ bool) {
+func SendTicketEmail(c *gin.Context, mailgun mailgun.Mailgun, name, to_address, orderID, authToken, qrCodeLocation string) (_ bool) {
 	var tpl bytes.Buffer
-	QRCode := (publicURL + authToken + ".png")
 
-	qrcode.WriteFile(publicURL+"/qr/"+authToken+".png", qrcode.Medium, 256, qrCodeLocation+authToken+".png")
+	qrcode.WriteFile(authToken, qrcode.Medium, 512, qrCodeLocation+authToken+".png")
 
 	if err := Email.Execute(&tpl, EmailStruct{
 		Name:      name,
 		OrderID:   orderID,
 		AuthToken: authToken,
-		QRCode:    QRCode,
 	}); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",

@@ -4,24 +4,27 @@ import (
 	"fmt"
 	"net/http"
 	"net/mail"
+	"time"
+
+	"github.com/go-redis/redis"
 
 	"github.com/compsoc-edinburgh/infball19-api/pkg/api/base"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	stripe "github.com/stripe/stripe-go"
-	"github.com/stripe/stripe-go/token"
 )
 
 func (i *Impl) MakeCharge(c *gin.Context) {
 	var result struct {
-		CardInfo  map[string]string
+		Token     string
 		StaffCode string // special code
 
 		FullName string
 		UUN      string
 		Email    string
 		// Over18      bool
-		MealType string
+		MealType  string
+		NoAlcohol bool
 
 		SpecialReqs string
 	}
@@ -31,26 +34,21 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 		return
 	}
 
+	currentTime := time.Now()
+	closeTime, _ := time.Parse(time.RFC3339, "2019-03-21T00:00:00+00:00")
+
+	if currentTime.Unix() > closeTime.Unix() {
+		base.BadRequest(c, "Ticket sales have now closed.")
+		return
+	}
+
 	if result.StaffCode != i.Config.StaffCode {
 		base.BadRequest(c, "Invalid staff code provided.")
 		return
 	}
 
-	if result.CardInfo == nil {
+	if result.Token == "" {
 		base.BadRequest(c, "Card information is missing.")
-		return
-	}
-
-	token, err := token.New(&stripe.TokenParams{
-		Card: &stripe.CardParams{
-			Number:   stripe.String(result.CardInfo["number"]),
-			ExpMonth: stripe.String(result.CardInfo["expmonth"]),
-			ExpYear:  stripe.String(result.CardInfo["expyear"]),
-			CVC:      stripe.String(result.CardInfo["cvc"]),
-		},
-	})
-	if err != nil {
-		base.BadRequest(c, "Invalid card information.")
 		return
 	}
 
@@ -65,7 +63,7 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 	}
 
 	toAddress := result.FullName + "<" + result.Email + ">"
-	_, err = mail.ParseAddress(toAddress)
+	_, err := mail.ParseAddress(toAddress)
 	if err != nil {
 		base.BadRequest(c, "Invalid email format provided. Please email infball@comp-soc.com if this is a mistake.")
 		return
@@ -85,12 +83,14 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 	}
 
 	sku, err := i.Stripe.Skus.Get(i.Config.Stripe.SKU, nil)
+	if result.NoAlcohol == true {
+		sku, err = i.Stripe.Skus.Get(i.Config.Stripe.NonAlcoholicSKU, nil)
+	}
 	if err != nil {
 		msg := err.Error()
 		if stripeErr, ok := err.(*stripe.Error); ok {
 			msg = stripeErr.Msg
 		}
-
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": msg,
@@ -103,7 +103,7 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 	if sku.Inventory.Quantity == 0 {
 		c.JSON(http.StatusGone, gin.H{
 			"status":  "error",
-			"message": "Sorry! We have run out of tickets... for now.",
+			"message": "Sorry! We have run out of those tickets... for now.",
 		})
 		return
 	}
@@ -149,7 +149,7 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 
 	// Charge the user's card:
 	params := &stripe.OrderPayParams{}
-	params.SetSource(token)
+	params.SetSource(result.Token)
 
 	// Actually pay the user
 	o, err := i.Stripe.Orders.Pay(order.ID, params)
@@ -171,7 +171,17 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 		Description: stripe.String("Informatics ball 2019 ticket"),
 	})
 
-	if !base.SendTicketEmail(c, i.Mailgun, result.FullName, toAddress, o.ID, authToken, "infball", "../qr") {
+	client := redis.NewClient(&redis.Options{
+		Addr:     i.Config.Redis.Address,
+		Password: i.Config.Redis.Password,
+		DB:       i.Config.Redis.DB,
+	})
+	err = client.Set(authToken, result.FullName, 0).Err()
+	if err != nil {
+		return
+	}
+
+	if !base.SendTicketEmail(c, i.Mailgun, result.FullName, toAddress, o.ID, authToken, "../qr") {
 		return
 	}
 

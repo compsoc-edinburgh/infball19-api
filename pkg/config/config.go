@@ -32,9 +32,9 @@ type Config struct {
 type StripeConfig struct {
 	PublishableKey  string `required:"true"`
 	SecretKey       string `required:"true"`
-	Product         string `required:"true"` // stripe product
-	SKU             string `required:"true"` // stripe SKU
-	NonAlcoholicSKU string // SKU for non alcoholic ticket
+	Product         string `required:"false"` // stripe product
+	SKU             string `required:"true"`  // stripe SKU
+	NonAlcoholicSKU string `required:"true"`  // SKU for non alcoholic ticket
 }
 
 type RedisConfig struct {

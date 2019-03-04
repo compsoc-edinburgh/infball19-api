@@ -19,5 +19,6 @@ require (
 	github.com/sirupsen/logrus v1.3.0
 	github.com/skip2/go-qrcode v0.0.0-20190110000554-dc11ecdae0a9
 	github.com/stripe/stripe-go v55.13.0+incompatible
+	golang.org/x/tour v0.0.0-20190206171615-838ce51196a7 // indirect
 	gopkg.in/mailgun/mailgun-go.v1 v1.1.1
 )
