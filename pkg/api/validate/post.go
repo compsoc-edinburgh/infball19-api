@@ -95,7 +95,7 @@ func (i *Impl) Post(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusGone, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 	})
 	return
