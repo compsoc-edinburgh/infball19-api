@@ -56,7 +56,7 @@ func (i *Impl) Post(c *gin.Context) {
 		return
 	}
 
-	if !base.CheckUUN(c, result.UUN) && result.StaffCode != i.Config.StaffCode {
+	if !base.CheckUUN(c, result.UUN) && (result.StaffCode != "" && result.StaffCode != i.Config.StaffCode) {
 		base.BadRequest(c, "You are not authorised to buy a ticket as your uun or invite code is invalid, if this is a mistake please contact us at infball@comp-soc.com")
 		return
 	}
