@@ -71,7 +71,7 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 		return
 	}
 
-	if !base.CheckUUN(c, result.UUN) && result.StaffCode != i.Config.StaffCode {
+	if !base.CheckUUN(c, result.UUN) && result.StaffCode != "" && result.StaffCode != i.Config.StaffCode {
 		base.BadRequest(c, "Invalid uun provided")
 		return
 	}
