@@ -15,7 +15,7 @@ func (i *Impl) Get(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, struct{ Quantity int64 }{sku.Inventory.Quantity})
+	c.JSON(http.StatusOK, gin.H{"quantity": sku.Inventory.Quantity})
 }
 
 func (i *Impl) GetNonAlcoholic(c *gin.Context) {
@@ -27,5 +27,5 @@ func (i *Impl) GetNonAlcoholic(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, struct{ Quantity int64 }{sku.Inventory.Quantity})
+	c.JSON(http.StatusOK, gin.H{"quantity": sku.Inventory.Quantity})
 }

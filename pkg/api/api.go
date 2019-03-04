@@ -7,8 +7,10 @@ import (
 	"github.com/compsoc-edinburgh/infball19-api/pkg/api/charge"
 	"github.com/compsoc-edinburgh/infball19-api/pkg/api/check"
 	"github.com/compsoc-edinburgh/infball19-api/pkg/api/list"
+	"github.com/compsoc-edinburgh/infball19-api/pkg/api/qr"
 	"github.com/compsoc-edinburgh/infball19-api/pkg/api/stats"
 	"github.com/compsoc-edinburgh/infball19-api/pkg/api/ticket"
+	"github.com/compsoc-edinburgh/infball19-api/pkg/api/validate"
 	"github.com/compsoc-edinburgh/infball19-api/pkg/config"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -49,8 +51,14 @@ func NewAPI(
 	router.POST("/check", check.Post)
 
 	stats := stats.Impl{API: a}
-	router.GET("/stats/set", stats.Get)
+	router.GET("/stats/regular", stats.Get)
 	router.GET("/stats/nonalcoholic", stats.GetNonAlcoholic)
+
+	validate := validate.Impl{API: a}
+	router.POST("/validate", validate.Post)
+
+	qr := qr.Impl{API: a}
+	router.GET("/qr/:auth_token", qr.Get)
 
 	list := list.Impl{API: a}
 	router.GET("/list", list.Get)

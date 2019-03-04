@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/mail"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -23,11 +24,12 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 		UUN      string
 		Email    string
 		// Over18      bool
-		MealType  string
+		MealTypes []string
 		NoAlcohol bool
 
 		SpecialReqs string
 	}
+	fmt.Println(c.ContentType())
 
 	if err := c.BindJSON(&result); err != nil {
 		base.BadRequest(c, err.Error())
@@ -42,7 +44,7 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 		return
 	}
 
-	if result.StaffCode != i.Config.StaffCode {
+	if result.StaffCode != "" && result.StaffCode != i.Config.StaffCode {
 		base.BadRequest(c, "Invalid staff code provided.")
 		return
 	}
@@ -69,11 +71,12 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 		return
 	}
 
-	if !base.CheckUUN(c, result.UUN) {
+	if !base.CheckUUN(c, result.UUN) && result.StaffCode != i.Config.StaffCode {
+		base.BadRequest(c, "Invalid uun provided")
 		return
 	}
 
-	if !base.IsMealValid(result.MealType) {
+	if !base.IsMealValid(result.MealTypes) {
 		base.BadRequest(c, "Invalid food selection.")
 		return
 	}
@@ -81,10 +84,16 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 		base.BadRequest(c, "Sorry, your request is limited to 500 characters. Please email infball@comp-soc.com for assistance.")
 		return
 	}
-
-	sku, err := i.Stripe.Skus.Get(i.Config.Stripe.SKU, nil)
-	if result.NoAlcohol == true {
+	sku := new(stripe.SKU)
+	skuString := ""
+	if !result.NoAlcohol {
+		fmt.Println("lets get wasted")
+		sku, err = i.Stripe.Skus.Get(i.Config.Stripe.SKU, nil)
+		skuString = i.Config.Stripe.SKU
+	} else {
+		fmt.Println("bismillah")
 		sku, err = i.Stripe.Skus.Get(i.Config.Stripe.NonAlcoholicSKU, nil)
+		skuString = i.Config.Stripe.NonAlcoholicSKU
 	}
 	if err != nil {
 		msg := err.Error()
@@ -115,7 +124,7 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 		Items: []*stripe.OrderItemParams{
 			&stripe.OrderItemParams{
 				Type:   stripe.String(string(stripe.OrderItemTypeSKU)),
-				Parent: stripe.String(i.Config.Stripe.SKU),
+				Parent: stripe.String(skuString),
 			},
 		},
 		Params: stripe.Params{
@@ -126,7 +135,7 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 				"owner_email":     result.Email,
 				"owner_name":      result.FullName,
 				// "over18":          strconv.FormatBool(result.Over18),
-				"meal_type":        result.MealType,
+				"meal_types":       strings.Join(result.MealTypes[:], ","),
 				"special_requests": result.SpecialReqs,
 				"auth_token":       authToken,
 			},
@@ -178,10 +187,12 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 	})
 	err = client.Set(authToken, result.FullName, 0).Err()
 	if err != nil {
-		return
+		//base.BadRequest(c, "An internal database error occured, although your card has been charged")
+		//return
+		fmt.Println(err)
 	}
 
-	if !base.SendTicketEmail(c, i.Mailgun, result.FullName, toAddress, o.ID, authToken, "../qr") {
+	if !base.SendTicketEmail(c, i.Mailgun, result.FullName, toAddress, o.ID, authToken) {
 		return
 	}
 

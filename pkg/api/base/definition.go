@@ -74,16 +74,16 @@ func CheckUUN(c *gin.Context, uun string) (success bool) {
 
 		_, err := mail.ParseAddress(checkEmail)
 		if err != nil {
-			BadRequest(c, "Invalid uun provided. Please email infball@comp-soc.com if this is a mistake.")
+			//BadRequest(c, "Invalid uun provided. Please email infball@comp-soc.com if this is a mistake.")
 			return
 		}
 
 		err = checkmail.ValidateHost(checkEmail)
 		if smtpErr, ok := err.(checkmail.SmtpError); ok && err != nil && smtpErr.Code() == "550" {
-			BadRequest(c, "Unknown UUN. Staff should put in the username they use to log in with EASE, not their @ed.ac.uk alias.")
+			//BadRequest(c, "Unknown UUN. Staff should put in the username they use to log in with EASE, not their @ed.ac.uk alias.")
 			return
 		} else if err != nil {
-			BadRequest(c, "Something went wrong with UUN validation. Please contact infball@comp-soc.com for assistance.")
+			//BadRequest(c, "Something went wrong with UUN validation. Please contact infball@comp-soc.com for assistance.")
 			return
 		}
 	}
@@ -91,7 +91,7 @@ func CheckUUN(c *gin.Context, uun string) (success bool) {
 	return true
 }
 
-func IsOneOf(one string, other ...string) bool {
+func IsOneOf(one string, other []string) bool {
 	for _, v := range other {
 		if v == one {
 			return true
@@ -100,6 +100,14 @@ func IsOneOf(one string, other ...string) bool {
 	return false
 }
 
-func IsMealValid(mealType string) bool {
-	return IsOneOf(mealType, "set", "vegetarian", "vegan", "gluten free", "lactose free")
+func IsMealValid(mealTypes []string) bool {
+
+	for _, mealType := range mealTypes {
+		if IsOneOf(mealType, []string{"set", "vegetarian", "vegan", "lactosefree", "glutenfree"}) {
+			continue
+		} else {
+			return false
+		}
+	}
+	return true
 }

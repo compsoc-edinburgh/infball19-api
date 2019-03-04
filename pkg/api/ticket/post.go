@@ -24,7 +24,7 @@ func (i *Impl) Post(c *gin.Context) {
 		Email    string
 		// Over18      bool
 		NoAlcohol bool
-		MealType  string
+		MealTypes []string
 
 		SpecialReqs string
 	}
@@ -67,7 +67,7 @@ func (i *Impl) Post(c *gin.Context) {
 		return
 	}
 
-	if !base.IsMealValid(result.MealType) {
+	if !base.IsMealValid(result.MealTypes) {
 		base.BadRequest(c, "Invalid food selection.")
 		return
 	}
@@ -78,6 +78,7 @@ func (i *Impl) Post(c *gin.Context) {
 	}
 
 	if !base.CheckUUN(c, result.UUN) {
+		base.BadRequest(c, "Invalid uun")
 		return
 	}
 
@@ -96,7 +97,7 @@ func (i *Impl) Post(c *gin.Context) {
 				"owner_name":  result.FullName,
 				// "over18":      strconv.FormatBool(result.Over18),
 				"no_alcohol":       strconv.FormatBool(result.NoAlcohol),
-				"meal_type":        result.MealType,
+				"meal_types":       strings.Join(result.MealTypes[:], ","),
 				"special_requests": result.SpecialReqs,
 				"auth_token":       authToken,
 			},
@@ -118,7 +119,7 @@ func (i *Impl) Post(c *gin.Context) {
 		if err != nil {
 			return
 		}
-		if !base.SendTicketEmail(c, i.Mailgun, result.FullName, toAddress, order.ID, authToken, "../qr") {
+		if !base.SendTicketEmail(c, i.Mailgun, result.FullName, toAddress, order.ID, authToken) {
 			return
 		}
 	}

@@ -6,22 +6,22 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	qrcode "github.com/skip2/go-qrcode"
 	mailgun "gopkg.in/mailgun/mailgun-go.v1"
 )
 
 type EmailStruct struct {
 	Name      string
-	AuthToken string
 	OrderID   string
+	AuthToken string
 }
 
 var Email *template.Template = template.Must(template.ParseFiles("email.html"))
 
-func SendTicketEmail(c *gin.Context, mailgun mailgun.Mailgun, name, to_address, orderID, authToken, qrCodeLocation string) (_ bool) {
+func SendTicketEmail(c *gin.Context, mailgun mailgun.Mailgun, name, to_address, orderID, authToken string) (_ bool) {
 	var tpl bytes.Buffer
 
-	qrcode.WriteFile(authToken, qrcode.Medium, 512, qrCodeLocation+authToken+".png")
+	//qr, _ := qrcode.Encode(authToken, qrcode.Medium, 512)
+	//sEnc := b64.StdEncoding.EncodeToString(qr)
 
 	if err := Email.Execute(&tpl, EmailStruct{
 		Name:      name,
@@ -37,7 +37,7 @@ func SendTicketEmail(c *gin.Context, mailgun mailgun.Mailgun, name, to_address, 
 
 	message := mailgun.NewMessage(
 		"Infball <infball@comp-soc.com>",
-		"Informatics ball 2019! [#"+orderID+"]",
+		"Informatics ball 2019!",
 		"",
 		to_address,
 	)
