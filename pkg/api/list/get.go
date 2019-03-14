@@ -1,9 +1,10 @@
 package list
 
 import (
-	"bytes"
 	"encoding/csv"
+	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -11,23 +12,19 @@ import (
 )
 
 func (i *Impl) Get(c *gin.Context) {
-	if c.Query("pw") != i.Config.StatsPass {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"status":  "error",
-			"message": "Unauthorised.",
-		})
-		return
-	}
 
 	params := &stripe.OrderListParams{}
 	params.AddExpand("data.charge.balance_transaction")
 	params.Filters.AddFilter("status", "", "paid")
+	sku := ""
 
 	// day before orders went out, utc timestamp
 	params.Filters.AddFilter("created", "gt", "1518714907")
 
-	buf := new(bytes.Buffer)
-	writer := csv.NewWriter(buf)
+	file, _ := os.Create("attendees.csv")
+	defer file.Close()
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
 
 	writer.Write([]string{
 		"order_id",
@@ -40,6 +37,7 @@ func (i *Impl) Get(c *gin.Context) {
 		"auth_token",
 		"charge_net",
 		"charge_fees",
+		"no_alcohol",
 	})
 
 	orders := i.Stripe.Orders.List(params)
@@ -49,8 +47,13 @@ func (i *Impl) Get(c *gin.Context) {
 		hasSKU := false
 		for _, item := range o.Items {
 			// todo: check if item.Parent always exists
-			if item.Parent.ID == i.Config.Stripe.SKU {
-				hasSKU = true
+			fmt.Println(item.Parent)
+			if item.Parent != nil {
+				if item.Parent.ID == i.Config.Stripe.SKU || item.Parent.ID == i.Config.Stripe.NonAlcoholicSKU {
+					sku = item.Parent.ID
+					hasSKU = true
+					continue
+				}
 			}
 		}
 
@@ -62,17 +65,18 @@ func (i *Impl) Get(c *gin.Context) {
 			o.ID,
 			o.Metadata["owner_name"], o.Metadata["owner_email"],
 			o.Metadata["uun"],
-			o.Metadata["meal_type"],
+			o.Metadata["meal_types"],
 			o.Metadata["special_requests"],
 			o.Metadata["purchaser_name"], o.Metadata["purchaser_email"],
-			o.Metadata["over18"],
+			//o.Metadata["over18"],
 			o.Metadata["auth_token"],
 			strconv.FormatInt(o.Charge.BalanceTransaction.Net, 10),
 			strconv.FormatInt(o.Charge.BalanceTransaction.Fee, 10),
+			strconv.FormatBool(sku == i.Config.Stripe.NonAlcoholicSKU),
 		})
 	}
 
-	writer.Flush()
+	// writer.Flush()
 
-	c.String(http.StatusOK, buf.String())
+	c.String(http.StatusOK, "ok")
 }

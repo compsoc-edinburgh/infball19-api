@@ -39,7 +39,7 @@ func (i *Impl) Post(c *gin.Context) {
 		return
 	}
 
-	if result.StaffCode != "" && result.StaffCode != i.Config.StaffCode {
+	if result.StaffCode != i.Config.StaffCode {
 		base.BadRequest(c, "Invalid invite code provided.")
 		return
 	}
@@ -53,11 +53,6 @@ func (i *Impl) Post(c *gin.Context) {
 	_, err := mail.ParseAddress(toAddress)
 	if err != nil {
 		base.BadRequest(c, "Invalid email format provided. Please email infball@comp-soc.com if this is a mistake.")
-		return
-	}
-
-	if !base.CheckUUN(c, result.UUN) && (result.StaffCode != "" && result.StaffCode != i.Config.StaffCode) {
-		base.BadRequest(c, "You are not authorised to buy a ticket as your uun or invite code is invalid, if this is a mistake please contact us at infball@comp-soc.com")
 		return
 	}
 

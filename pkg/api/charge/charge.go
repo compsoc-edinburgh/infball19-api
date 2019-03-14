@@ -44,8 +44,8 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 		return
 	}
 
-	if result.StaffCode != "" && result.StaffCode != i.Config.StaffCode {
-		base.BadRequest(c, "Invalid staff code provided.")
+	if result.StaffCode != i.Config.StaffCode {
+		base.BadRequest(c, "Invalid invite code provided.")
 		return
 	}
 
@@ -68,11 +68,6 @@ func (i *Impl) MakeCharge(c *gin.Context) {
 	_, err := mail.ParseAddress(toAddress)
 	if err != nil {
 		base.BadRequest(c, "Invalid email format provided. Please email infball@comp-soc.com if this is a mistake.")
-		return
-	}
-
-	if !base.CheckUUN(c, result.UUN) && result.StaffCode != "" && result.StaffCode != i.Config.StaffCode {
-		base.BadRequest(c, "Invalid uun provided")
 		return
 	}
 
